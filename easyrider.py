@@ -7,6 +7,7 @@ data = json.loads(input())
 
 error_ids = dict()
 keys: List[str] = ['bus_id', 'stop_id', 'stop_name', 'next_stop', 'stop_type', 'a_time']
+bus_info = dict()
 
 for bus in data:
     if not bus[keys[0]] or not isinstance(bus[keys[0]], int):
@@ -29,7 +30,9 @@ for bus in data:
     elif not re.match(r"^(2[0-3]|1[0-9]|0[1-9]):[0-5]\d$", bus[keys[5]]):
         error_ids[keys[5]] = error_ids.get(keys[5], 0) + 1
 
+    bus_info[bus[keys[0]]] = bus_info.get(bus[keys[0]], 0) + 1
 
-print("Format validation:", str(sum(error_ids.values())), "errors")
-for k in ['stop_name', 'stop_type', 'a_time']:
-    print(f"{k}: {error_ids.get(k, 0)}")
+print("Line names and number of stops:")
+for bus in bus_info:
+    print(f"bus_id: {bus}, stops: {bus_info[bus]}")
+
