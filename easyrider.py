@@ -1,37 +1,40 @@
 # Write your awesome code here
 import json
-from typing import List
-import re
 
 data = json.loads(input())
 
-bus_info = dict()
-stop_counts = {"start": [], "finish": [], "stops": dict()}
 
-for bus in data:
-    busid = bus["bus_id"]
-    if not bus_info.get(busid, False):
-        bus_info[busid] = {"start": 0, "finish": 0}
-    if bus["stop_type"] == "S":
-        bus_info[busid]["start"] += 1
-        stop_counts["start"] += [bus["stop_name"]]
-    elif bus["stop_type"] == "F":
-        bus_info[busid]["finish"] += 1
-        stop_counts["finish"] += [bus["stop_name"]]
+def decimal(t):
+    str_vals = t.split(":")
+    return float(str_vals[0]) + float(str_vals[1])/60
 
-    stop_counts["stops"][bus["stop_name"]] = stop_counts["stops"].get(bus["stop_name"], 0) + 1
 
-print_next = True
-for bus in bus_info:
-    if bus_info[bus]["start"] == 0 or bus_info[bus]["finish"] == 0:
-        print(f"There is no start or end stop for the line: {bus}")
-        print_next = False
-        break
+def positive_timediff(t1, t2):
+    return decimal(t2) > decimal(t1)
 
-if print_next:
-    stop_list = sorted(set(stop_counts['start']))
-    transfers = sorted(set([k for k, x in stop_counts["stops"].items() if x > 1]))
-    finish_list = sorted(set(stop_counts['finish']))
-    print(f"Start stops: {len(stop_list)} {stop_list}")
-    print(f"Transfer stops: {len(transfers)} {transfers}")
-    print(f"Finish stops: {len(finish_list)} {finish_list}")
+
+time_info = dict()
+
+for station in data:
+    bus_id = station["bus_id"]
+    if not time_info.get(bus_id, False):
+        time_info[bus_id] = {}
+    time_info[bus_id][station['stop_id']] = {
+        "name": station['stop_name'],
+        "time": station['a_time'],
+        'next_stop': station['next_stop']}
+
+print("Arrival time tests:")
+ok = True
+for bus_id, bus_info in time_info.items():
+    for id, values in bus_info.items():
+        next_stop = values['next_stop']
+        if next_stop in bus_info:
+            if not positive_timediff(values['time'], bus_info[next_stop]['time']):
+                print(f"bus_id line {bus_id}: wrong time on station {bus_info[next_stop]['name']}")
+                ok = False
+                break
+
+if ok:
+    print("OK")
+
