@@ -5,34 +5,33 @@ import re
 
 data = json.loads(input())
 
-error_ids = dict()
-keys: List[str] = ['bus_id', 'stop_id', 'stop_name', 'next_stop', 'stop_type', 'a_time']
 bus_info = dict()
+stop_counts = {"start": [], "finish": [], "stops": dict()}
 
 for bus in data:
-    if not bus[keys[0]] or not isinstance(bus[keys[0]], int):
-        error_ids[keys[0]] = error_ids.get(keys[0], 0) + 1
-    if not bus[keys[1]] or not isinstance(bus[keys[1]], int):
-        error_ids[keys[1]] = error_ids.get(keys[1], 0) + 1
-    if not bus[keys[2]] or not isinstance(bus[keys[2]], str):
-        error_ids[keys[2]] = error_ids.get(keys[2], 0) + 1
-    elif not re.match(r"([A-Z]\w+ )+(Road|Avenue|Boulevard|Street)$", bus[keys[2]]):
-        error_ids[keys[2]] = error_ids.get(keys[2], 0) + 1
+    busid = bus["bus_id"]
+    if not bus_info.get(busid, False):
+        bus_info[busid] = {"start": 0, "finish": 0}
+    if bus["stop_type"] == "S":
+        bus_info[busid]["start"] += 1
+        stop_counts["start"] += [bus["stop_name"]]
+    elif bus["stop_type"] == "F":
+        bus_info[busid]["finish"] += 1
+        stop_counts["finish"] += [bus["stop_name"]]
 
-    if bus[keys[3]] is None or not isinstance(bus[keys[3]], int):
-        error_ids[keys[3]] = error_ids.get(keys[3], 0) + 1
-    if not isinstance(bus[keys[4]], str):
-        error_ids[keys[4]] = error_ids.get(keys[4], 0) + 1
-    elif not re.match("^[SOF]?$", bus[keys[4]]):
-        error_ids[keys[4]] = error_ids.get(keys[4], 0) + 1
-    if not bus[keys[5]] or not isinstance(bus[keys[5]], str):
-        error_ids[keys[5]] = error_ids.get(keys[5], 0) + 1
-    elif not re.match(r"^(2[0-3]|1[0-9]|0[1-9]):[0-5]\d$", bus[keys[5]]):
-        error_ids[keys[5]] = error_ids.get(keys[5], 0) + 1
+    stop_counts["stops"][bus["stop_name"]] = stop_counts["stops"].get(bus["stop_name"], 0) + 1
 
-    bus_info[bus[keys[0]]] = bus_info.get(bus[keys[0]], 0) + 1
-
-print("Line names and number of stops:")
+print_next = True
 for bus in bus_info:
-    print(f"bus_id: {bus}, stops: {bus_info[bus]}")
+    if bus_info[bus]["start"] == 0 or bus_info[bus]["finish"] == 0:
+        print(f"There is no start or end stop for the line: {bus}")
+        print_next = False
+        break
 
+if print_next:
+    stop_list = sorted(set(stop_counts['start']))
+    transfers = sorted(set([k for k, x in stop_counts["stops"].items() if x > 1]))
+    finish_list = sorted(set(stop_counts['finish']))
+    print(f"Start stops: {len(stop_list)} {stop_list}")
+    print(f"Transfer stops: {len(transfers)} {transfers}")
+    print(f"Finish stops: {len(finish_list)} {finish_list}")
